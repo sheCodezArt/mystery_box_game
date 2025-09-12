@@ -110,7 +110,7 @@
 
     .result {
       margin-top: 25px;
-      font-size: 1.3rem;
+      font-size: 0.9rem;
       color: hotpink;
       text-shadow: 0 0 10px hotpink;
       text-align: center;
@@ -149,10 +149,10 @@
       justify-content: center;
       flex-direction: column;
       z-index: 1000;
-      color: #00ff7f;
+      color: #ffffff;
       font-size: 3rem;
       font-weight: bold;
-      text-shadow: 0 0 20px #00ff7f, 0 0 40px #00ff7f;
+      text-shadow: 0 0 20px #000000, 0 0 40px #000000;
       animation: fadeIn 1s ease-in-out;
     }
 
@@ -286,7 +286,7 @@
     });
 
     function checkWinner(player) {
-      if (playerScore === 10 || botScore === 10) {
+      if (playerScore === 5 || botScore === 5) {
         winnerOverlay.textContent = `${player} Wins!`;
         winnerOverlay.classList.remove("hidden");
       }
