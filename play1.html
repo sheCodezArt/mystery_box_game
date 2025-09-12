@@ -168,10 +168,10 @@
     const boxes = document.querySelectorAll('.box');
     const result = document.querySelector('.result');
     const prizeImages = [
-      "https://i.imgur.com/0v5b1Yt.png", // Gold
-      "https://i.imgur.com/6G5kQ7p.png", // Diamond
-      "https://i.imgur.com/3JQeYjW.png", // Crown
-      "https://i.imgur.com/DT8l0xQ.png", // Treasure chest
+      "one.jpeg", // Gold
+      "two.jpeg", // Diamond
+      "three.jpeg", // Crown
+      "zero.jpeg", // Treasure chest
     ];
 
     let prizeIndex = Math.floor(Math.random() * 3);
@@ -189,7 +189,7 @@
           img.src = prizeImg;
           result.textContent = "🎉 You found the treasure!";
         } else {
-          img.src = "https://i.imgur.com/Jy6j5hR.png"; // Skull (bad luck)
+          img.src = ""; // Skull (bad luck)
           result.textContent = "💀 Wrong box! Treasure lost!";
         }
 
