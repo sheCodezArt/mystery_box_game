@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mystery Box Game</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Arial', sans-serif;
+    }
+
+    body {
+      background: #000;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+      color: hotpink;
+      text-shadow: 0 0 15px hotpink;
+      letter-spacing: 2px;
+      animation: glow 2s infinite alternate;
+      text-align: center;
+    }
+
+    @keyframes glow {
+      from { text-shadow: 0 0 10px hotpink; }
+      to { text-shadow: 0 0 25px deeppink; }
+    }
+
+    .game {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .box {
+      width: 150px;
+      height: 150px;
+      perspective: 1000px;
+      cursor: pointer;
+    }
+
+    .inner {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.8s ease;
+    }
+
+    .box.opened .inner {
+      transform: rotateY(180deg);
+    }
+
+    .front, .back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 20px;
+      backface-visibility: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 20px rgba(255, 105, 180, 0.6);
+    }
+
+    .front {
+      background: linear-gradient(145deg, pink, deeppink);
+      font-size: 2.5rem;
+      color: black;
+      font-weight: bold;
+    }
+
+    .back {
+      background: #111;
+      transform: rotateY(180deg);
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .back img {
+      max-width: 100px;
+      max-height: 100px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px hotpink;
+    }
+
+    .result {
+      margin-top: 25px;
+      font-size: 1.3rem;
+      color: hotpink;
+      text-shadow: 0 0 10px hotpink;
+      text-align: center;
+    }
+
+    button {
+      margin-top: 15px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 25px;
+      background: hotpink;
+      color: black;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: deeppink;
+      color: white;
+      box-shadow: 0 0 15px deeppink;
+    }
+
+    @media (max-width: 600px) {
+      .box {
+        width: 120px;
+        height: 120px;
+      }
+      .back img {
+        max-width: 80px;
+        max-height: 80px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>🎁 Mystery Box Game 🎁</h1>
+  <div class="game">
+    <div class="box" data-index="0">
+      <div class="inner">
+        <div class="front">?</div>
+        <div class="back"><img></div>
+      </div>
+    </div>
+    <div class="box" data-index="1">
+      <div class="inner">
+        <div class="front">?</div>
+        <div class="back"><img></div>
+      </div>
+    </div>
+    <div class="box" data-index="2">
+      <div class="inner">
+        <div class="front">?</div>
+        <div class="back"><img></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="result"></div>
+  <button onclick="resetGame()">Play Again</button>
+
+  <script>
+    const boxes = document.querySelectorAll('.box');
+    const result = document.querySelector('.result');
+    const prizeImages = [
+      "https://i.imgur.com/0v5b1Yt.png", // Gold
+      "https://i.imgur.com/6G5kQ7p.png", // Diamond
+      "https://i.imgur.com/3JQeYjW.png", // Crown
+      "https://i.imgur.com/DT8l0xQ.png", // Treasure chest
+    ];
+
+    let prizeIndex = Math.floor(Math.random() * 3);
+    let prizeImg = prizeImages[Math.floor(Math.random() * prizeImages.length)];
+    let gameOver = false;
+
+    boxes.forEach((box, index) => {
+      box.addEventListener('click', () => {
+        if (gameOver) return;
+
+        box.classList.add('opened');
+        const img = box.querySelector('.back img');
+
+        if (index === prizeIndex) {
+          img.src = prizeImg;
+          result.textContent = "🎉 You found the treasure!";
+        } else {
+          img.src = "https://i.imgur.com/Jy6j5hR.png"; // Skull (bad luck)
+          result.textContent = "💀 Wrong box! Treasure lost!";
+        }
+
+        gameOver = true;
+      });
+    });
+
+    function resetGame() {
+      prizeIndex = Math.floor(Math.random() * 3);
+      prizeImg = prizeImages[Math.floor(Math.random() * prizeImages.length)];
+      gameOver = false;
+      result.textContent = "";
+      boxes.forEach(box => {
+        box.classList.remove('opened');
+        box.querySelector('.back img').src = "";
+      });
+    }
+  </script>
+</body>
+</html>

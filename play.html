@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mystery Box Game</title>
+  <style>
+    /* Reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Arial', sans-serif;
+    }
+
+    body {
+      background: #000;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+      color: hotpink;
+      text-shadow: 0 0 15px hotpink;
+      letter-spacing: 2px;
+      animation: glow 2s infinite alternate;
+    }
+
+    @keyframes glow {
+      from { text-shadow: 0 0 10px hotpink; }
+      to { text-shadow: 0 0 25px deeppink; }
+    }
+
+    .game {
+      display: flex;
+      gap: 30px;
+    }
+
+    .box {
+      width: 120px;
+      height: 120px;
+      background: pink;
+      border-radius: 15px;
+      box-shadow: 0 0 20px rgba(255,105,180,0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      font-weight: bold;
+      cursor: pointer;
+      transform-style: preserve-3d;
+      perspective: 1000px;
+      transition: transform 0.6s;
+    }
+
+    .box.opened {
+      transform: rotateY(180deg);
+    }
+
+    .inner {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.6s;
+    }
+
+    .front, .back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 15px;
+      backface-visibility: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .front {
+      background: pink;
+      color: black;
+    }
+
+    .back {
+      background: black;
+      color: hotpink;
+      transform: rotateY(180deg);
+      font-size: 1.5rem;
+      text-align: center;
+      padding: 10px;
+    }
+
+    .result {
+      margin-top: 30px;
+      font-size: 1.5rem;
+      color: hotpink;
+      text-shadow: 0 0 10px hotpink;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 25px;
+      background: hotpink;
+      color: black;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: deeppink;
+      color: white;
+      box-shadow: 0 0 10px deeppink;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎁 Mystery Box Game 🎁</h1>
+  <div class="game">
+    <div class="box" data-index="0">
+      <div class="inner">
+        <div class="front">?</div>
+        <div class="back">🎉 Prize!</div>
+      </div>
+    </div>
+    <div class="box" data-index="1">
+      <div class="inner">
+        <div class="front">?</div>
+        <div class="back">💀 Oops!</div>
+      </div>
+    </div>
+    <div class="box" data-index="2">
+      <div class="inner">
+        <div class="front">?</div>
+        <div class="back">💀 Oops!</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="result"></div>
+  <button onclick="resetGame()">Play Again</button>
+
+  <script>
+    const boxes = document.querySelectorAll('.box');
+    const result = document.querySelector('.result');
+    let prizeIndex = Math.floor(Math.random() * 3);
+    let gameOver = false;
+
+    boxes.forEach((box, index) => {
+      box.addEventListener('click', () => {
+        if (gameOver) return;
+
+        box.classList.add('opened');
+        box.querySelector('.inner').style.transform = "rotateY(90deg)";
+
+        if (index === prizeIndex) {
+          result.textContent = "🎉 You found the prize!";
+        } else {
+          result.textContent = "💀 Wrong box! Try again.";
+        }
+
+        gameOver = true;
+      });
+    });
+
+    function resetGame() {
+      prizeIndex = Math.floor(Math.random() * 3);
+      gameOver = false;
+      result.textContent = "";
+      boxes.forEach(box => {
+        box.classList.remove('opened');
+        box.querySelector('.inner').style.transform = "rotateY(0deg)";
+      });
+    }
+  </script>
+</body>
+</html>
