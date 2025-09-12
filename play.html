@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mystery Box Game</title>
+  <title>Mystery Box Game - You vs Bot</title>
   <style>
-    /* Reset */
     * {
       margin: 0;
       padding: 0;
@@ -20,8 +19,9 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 100vh;
-      overflow: hidden;
+      min-height: 100vh;
+      padding: 20px;
+      overflow-x: hidden;
     }
 
     h1 {
@@ -30,6 +30,7 @@
       text-shadow: 0 0 15px hotpink;
       letter-spacing: 2px;
       animation: glow 2s infinite alternate;
+      text-align: center;
     }
 
     @keyframes glow {
@@ -37,30 +38,27 @@
       to { text-shadow: 0 0 25px deeppink; }
     }
 
-    .game {
+    .scoreboard {
+      margin-bottom: 20px;
+      font-size: 1.2rem;
+      color: hotpink;
+      text-shadow: 0 0 10px deeppink;
       display: flex;
       gap: 30px;
     }
 
-    .box {
-      width: 120px;
-      height: 120px;
-      background: pink;
-      border-radius: 15px;
-      box-shadow: 0 0 20px rgba(255,105,180,0.8);
+    .game {
       display: flex;
-      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
       justify-content: center;
-      font-size: 2rem;
-      font-weight: bold;
-      cursor: pointer;
-      transform-style: preserve-3d;
-      perspective: 1000px;
-      transition: transform 0.6s;
     }
 
-    .box.opened {
-      transform: rotateY(180deg);
+    .box {
+      width: 150px;
+      height: 150px;
+      perspective: 1000px;
+      cursor: pointer;
     }
 
     .inner {
@@ -68,43 +66,59 @@
       height: 100%;
       position: relative;
       transform-style: preserve-3d;
-      transition: transform 0.6s;
+      transition: transform 0.8s ease;
+    }
+
+    .box.opened .inner {
+      transform: rotateY(180deg);
     }
 
     .front, .back {
       position: absolute;
       width: 100%;
       height: 100%;
-      border-radius: 15px;
+      border-radius: 20px;
       backface-visibility: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
+      box-shadow: 0 8px 20px rgba(255, 105, 180, 0.6);
     }
 
     .front {
-      background: pink;
+      background: linear-gradient(145deg, pink, deeppink);
+      font-size: 2.5rem;
       color: black;
+      font-weight: bold;
     }
 
     .back {
-      background: black;
-      color: hotpink;
+      background: #111;
       transform: rotateY(180deg);
-      font-size: 1.5rem;
-      text-align: center;
       padding: 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .back img {
+      max-width: 100px;
+      max-height: 100px;
+      border-radius: 10px;
     }
 
     .result {
-      margin-top: 30px;
-      font-size: 1.5rem;
+      margin-top: 25px;
+      font-size: 1.3rem;
       color: hotpink;
       text-shadow: 0 0 10px hotpink;
+      text-align: center;
+      min-height: 30px;
     }
 
     button {
-      margin-top: 20px;
+      margin-top: 15px;
       padding: 10px 20px;
       border: none;
       border-radius: 25px;
@@ -119,29 +133,75 @@
     button:hover {
       background: deeppink;
       color: white;
-      box-shadow: 0 0 10px deeppink;
+      box-shadow: 0 0 15px deeppink;
+    }
+
+    /* Winner overlay with sparkle burst */
+    .winner-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.85) url('https://i.gifer.com/7efs.gif') center/cover no-repeat;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      z-index: 1000;
+      color: #00ff7f;
+      font-size: 3rem;
+      font-weight: bold;
+      text-shadow: 0 0 20px #00ff7f, 0 0 40px #00ff7f;
+      animation: fadeIn 1s ease-in-out;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @media (max-width: 600px) {
+      .box {
+        width: 120px;
+        height: 120px;
+      }
+      .back img {
+        max-width: 80px;
+        max-height: 80px;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>🎁 Mystery Box Game 🎁</h1>
+  <h1>🎁 Mystery Box Game - You vs Bot 🎁</h1>
+
+  <div class="scoreboard">
+    <div>👤 You: <span id="playerScore">0</span></div>
+    <div>🤖 Bot: <span id="botScore">0</span></div>
+  </div>
+
   <div class="game">
     <div class="box" data-index="0">
       <div class="inner">
         <div class="front">?</div>
-        <div class="back">🎉 Prize!</div>
+        <div class="back"><img></div>
       </div>
     </div>
     <div class="box" data-index="1">
       <div class="inner">
         <div class="front">?</div>
-        <div class="back">💀 Oops!</div>
+        <div class="back"><img></div>
       </div>
     </div>
     <div class="box" data-index="2">
       <div class="inner">
         <div class="front">?</div>
-        <div class="back">💀 Oops!</div>
+        <div class="back"><img></div>
       </div>
     </div>
   </div>
@@ -149,38 +209,98 @@
   <div class="result"></div>
   <button onclick="resetGame()">Play Again</button>
 
+  <!-- Winner overlay -->
+  <div id="winnerOverlay" class="winner-overlay hidden"></div>
+
   <script>
     const boxes = document.querySelectorAll('.box');
     const result = document.querySelector('.result');
-    let prizeIndex = Math.floor(Math.random() * 3);
-    let gameOver = false;
+    const playerScoreEl = document.getElementById("playerScore");
+    const botScoreEl = document.getElementById("botScore");
+    const winnerOverlay = document.getElementById("winnerOverlay");
+
+    const prizeImages = [
+      "one.png", "two.png", "three.png", "four.png"
+    ];
+
+    let playerScore = 0;
+    let botScore = 0;
+    let prizeIndex, prizeImg, gameOver;
+
+    function initGame() {
+      prizeIndex = Math.floor(Math.random() * 3);
+      prizeImg = prizeImages[Math.floor(Math.random() * prizeImages.length)];
+      gameOver = false;
+      result.textContent = "";
+      boxes.forEach(box => {
+        box.classList.remove('opened');
+        box.querySelector('.back img').src = "";
+      });
+    }
 
     boxes.forEach((box, index) => {
       box.addEventListener('click', () => {
         if (gameOver) return;
 
+        // Player's turn
         box.classList.add('opened');
-        box.querySelector('.inner').style.transform = "rotateY(90deg)";
+        const img = box.querySelector('.back img');
 
         if (index === prizeIndex) {
-          result.textContent = "🎉 You found the prize!";
+          img.src = prizeImg;
+          result.textContent = "🎉 You found the treasure!";
+          playerScore++;
+          playerScoreEl.textContent = playerScore;
+          checkWinner("You");
+          gameOver = true;
+          return;
         } else {
-          result.textContent = "💀 Wrong box! Try again.";
+          img.src = "zero.png";
         }
 
-        gameOver = true;
+        // Bot's turn
+        setTimeout(() => {
+          let botChoice;
+          do {
+            botChoice = Math.floor(Math.random() * 3);
+          } while (botChoice === index);
+
+          const botBox = boxes[botChoice];
+          botBox.classList.add('opened');
+          const botImg = botBox.querySelector('.back img');
+
+          if (botChoice === prizeIndex) {
+            botImg.src = prizeImg;
+            result.textContent = "🤖 Bot found the treasure!";
+            botScore++;
+            botScoreEl.textContent = botScore;
+            checkWinner("Bot");
+          } else {
+            botImg.src = "zero.png";
+            result.textContent = "😅 No one found the treasure this round!";
+          }
+
+          gameOver = true;
+        }, 1000);
       });
     });
 
-    function resetGame() {
-      prizeIndex = Math.floor(Math.random() * 3);
-      gameOver = false;
-      result.textContent = "";
-      boxes.forEach(box => {
-        box.classList.remove('opened');
-        box.querySelector('.inner').style.transform = "rotateY(0deg)";
-      });
+    function checkWinner(player) {
+      if (playerScore === 10 || botScore === 10) {
+        winnerOverlay.textContent = `${player} Wins!`;
+        winnerOverlay.classList.remove("hidden");
+      }
     }
+
+    function resetGame() {
+      initGame();
+      if (!winnerOverlay.classList.contains("hidden")) {
+        winnerOverlay.classList.add("hidden");
+      }
+    }
+
+    // Start first round
+    initGame();
   </script>
 </body>
 </html>
