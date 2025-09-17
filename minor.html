@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Mood Music & Quote Player</title>
+<style>
+  :root{
+    --bg:#0b0b0f;
+    --card:#0f0f14;
+    --accent:#ff6bcb;
+    --text:#ffffff;
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background:linear-gradient(180deg,var(--bg), #070709);
+    color:var(--text);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+    transition:background 800ms ease;
+  }
+
+  .wrap{
+    width:100%;
+    max-width:980px;
+    background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.15));
+    border-radius:14px;
+    padding:20px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.6);
+    overflow:hidden;
+    position:relative;
+  }
+
+  header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    margin-bottom:18px;
+  }
+
+  .title{
+    display:flex;
+    gap:12px;
+    align-items:center;
+  }
+
+  .logo{
+    width:58px;
+    height:58px;
+    border-radius:12px;
+    display:grid;
+    place-items:center;
+    font-weight:700;
+    font-size:20px;
+    color:#111;
+    background:linear-gradient(135deg,var(--accent),#ff9adf);
+    box-shadow:0 6px 18px rgba(255,107,203,0.18);
+  }
+
+  h1{font-size:20px;margin:0}
+  p.lead{margin:0;color:rgba(255,255,255,0.75);font-size:13px}
+
+  /* mood buttons */
+  .moods{
+    display:flex;
+    gap:8px;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+
+  .mood-btn{
+    padding:8px 12px;
+    border-radius:999px;
+    border:none;
+    cursor:pointer;
+    background:rgba(255,255,255,0.04);
+    color:var(--text);
+    font-weight:600;
+    transition:all 220ms ease;
+    display:flex;
+    gap:8px;
+    align-items:center;
+    box-shadow: inset 0 -2px 0 rgba(0,0,0,0.25);
+  }
+
+  .mood-btn:hover{transform:translateY(-3px)}
+  .mood-btn.active{
+    box-shadow:0 8px 24px rgba(0,0,0,0.5), 0 0 18px rgba(255,255,255,0.03);
+    transform:translateY(-2px) scale(1.02);
+  }
+
+  main{
+    display:flex;
+    gap:20px;
+    align-items:stretch;
+    flex-wrap:wrap;
+  }
+
+  .left, .right{
+    flex:1 1 320px;
+  }
+
+  /* Card styles */
+  .card{
+    background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.12));
+    border-radius:12px;
+    padding:18px;
+    min-height:170px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    justify-content:space-between;
+  }
+
+  /* Quote area */
+  .quote{
+    font-size:18px;
+    line-height:1.35;
+    font-weight:600;
+    opacity:0;
+    transform:translateY(8px);
+    transition: all 450ms cubic-bezier(.2,.9,.2,1);
+  }
+  .quote.show{opacity:1; transform:none}
+
+  .quote-author{font-size:13px;color:rgba(255,255,255,0.7);margin-top:6px}
+
+  /* Player controls */
+  .player-controls{
+    display:flex;
+    gap:12px;
+    align-items:center;
+  }
+  .big-btn{
+    padding:10px 14px;
+    border-radius:10px;
+    border:none;
+    cursor:pointer;
+    font-weight:700;
+    background:linear-gradient(135deg,var(--accent), #ff9adf);
+    color:#111;
+  }
+  .icon-btn{
+    background:rgba(255,255,255,0.03);
+    color:var(--text);
+    border:none;
+    padding:8px;
+    border-radius:10px;
+    cursor:pointer;
+  }
+
+  .progress{
+    width:100%;
+    height:6px;
+    background:rgba(255,255,255,0.07);
+    border-radius:6px;
+    overflow:hidden;
+  }
+  .progress > i{
+    display:block;
+    height:100%;
+    width:0%;
+    background:linear-gradient(90deg,var(--accent), #fff3);
+  }
+
+  .track-title{font-size:13px;color:rgba(255,255,255,0.9);font-weight:700}
+
+  /* Mood specific visuals (will be applied on body via class) */
+  .particles{
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    z-index:0;
+  }
+
+  /* responsive tweaks */
+  @media (max-width:740px){
+    .title h1{font-size:17px}
+    .left,.right{flex-basis:100%}
+  }
+
+  /* Mood color presets */
+  /* happy */
+  body.mood-happy{ --bg: linear-gradient(180deg,#ffecd2, #ff9a9e); --accent:#ffd166; --card:#ffffff11; --text:#111 }
+  /* sad */
+  body.mood-sad{ --bg: linear-gradient(180deg,#0f1724, #09203f); --accent:#5b8fff; --card:#0b1220; --text:#fff }
+  /* focus */
+  body.mood-focus{ --bg: linear-gradient(180deg,#0f1724, #0b3a3a); --accent:#7effc7; --card:#071515; --text:#eafff0 }
+  /* energetic */
+  body.mood-energetic{ --bg: linear-gradient(180deg,#ff6b6b, #ffb86b); --accent:#ff6bcb; --card:#1b0b0b; --text:#fff }
+
+  /* adjust card shadow by mood accent */
+  body.mood-happy .card{ box-shadow: 0 8px 30px rgba(255,209,102,0.08) }
+  body.mood-sad .card{ box-shadow: 0 8px 30px rgba(91,143,255,0.06) }
+  body.mood-focus .card{ box-shadow: 0 8px 30px rgba(126,255,199,0.06) }
+  body.mood-energetic .card{ box-shadow: 0 8px 30px rgba(255,107,203,0.06) }
+
+  /* small helper */
+  .muted{opacity:0.75;font-size:13px;color:rgba(255,255,255,0.7)}
+</style>
+</head>
+<body class="">
+  <div class="wrap" role="application" aria-label="Mood music and quote player">
+    <header>
+      <div class="title">
+        <div class="logo" aria-hidden="true">MM</div>
+        <div>
+          <h1>Mood Music & Quote Player</h1>
+          <p class="lead">Pick your mood — tunes, vibes and a quote to match.</p>
+        </div>
+      </div>
+
+      <nav class="moods" aria-label="Choose mood">
+        <button class="mood-btn" data-mood="happy">😊 Happy</button>
+        <button class="mood-btn" data-mood="sad">😢 Sad</button>
+        <button class="mood-btn" data-mood="focus">🧠 Focus</button>
+        <button class="mood-btn" data-mood="energetic">⚡ Energetic</button>
+      </nav>
+    </header>
+
+    <main>
+      <section class="left">
+        <div class="card" style="position:relative;z-index:2">
+          <div>
+            <div class="track-title" id="trackTitle">No track loaded</div>
+            <div class="muted" id="moodLabel">Mood: —</div>
+          </div>
+
+          <div style="margin-top:12px">
+            <div class="progress" id="progressBar" aria-hidden="true"><i></i></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;">
+              <div style="display:flex;gap:8px;align-items:center">
+                <button class="icon-btn" id="prevBtn" title="Previous (not strict)">&lt;&lt;</button>
+                <button class="big-btn" id="playPauseBtn">Play</button>
+                <button class="icon-btn" id="nextBtn" title="Next">&gt;&gt;</button>
+              </div>
+
+              <div style="display:flex;align-items:center;gap:8px">
+                <input id="volume" type="range" min="0" max="1" step="0.01" value="0.8" aria-label="Volume" />
+                <span class="muted" id="timeLabel">00:00 / 00:00</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:10px" class="muted">
+            Tip: replace the sample audio files in the JS arrays with your own local .mp3 files.
+          </div>
+        </div>
+      </section>
+
+      <section class="right">
+        <div class="card">
+          <div id="quoteArea" aria-live="polite">
+            <div class="quote" id="quoteText">Pick a mood to reveal a quote.</div>
+            <div class="quote-author" id="quoteAuthor"></div>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
+            <div class="muted">Auto-pick a random quote + track each mood</div>
+            <div style="display:flex;gap:8px">
+              <button class="icon-btn" id="newQuoteBtn" title="New quote">🔁</button>
+              <button class="icon-btn" id="shuffleBtn" title="Shuffle track">🎲</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div class="particles" aria-hidden="true" id="particles"></div>
+  </div>
+
+  <!-- audio element (we'll swap src programmatically) -->
+  <audio id="player" preload="auto"></audio>
+
+<script>
+  // ======= Replace these arrays with your real local file names if desired =======
+  const tracks = {
+    happy: [
+      {src:"happy1.mp3", title:"Uplift Loop 1"},
+      {src:"happy2.mp3", title:"Sunny Groove"},
+      {src:"happy3.mp3", title:"Bright Beat"}
+    ],
+    sad: [
+      {src:"sad1.mp3", title:"Blue Piano"},
+      {src:"sad2.mp3", title:"Melancholy Strings"}
+    ],
+    focus: [
+      {src:"focus1.mp3", title:"Deep Focus Ambience"},
+      {src:"focus2.mp3", title:"Minimal Loop"}
+    ],
+    energetic: [
+      {src:"energetic1.mp3", title:"High Tempo"},
+      {src:"energetic2.mp3", title:"Drive Beat"},
+      {src:"energetic3.mp3", title:"Pulse"}
+    ]
+  };
+
+  const quotes = {
+    happy: [
+      {text:"Happiness often sneaks in through a door you didn't know you left open.", author:"John Barrymore"},
+      {text:"For every minute you are angry you lose sixty seconds of happiness.", author:"Ralph Waldo Emerson"},
+      {text:"Think of all the beauty still left around you and be happy.", author:"Anne Frank"}
+    ],
+    sad: [
+      {text:"Tears come from the heart and not from the brain.", author:"Leonardo da Vinci"},
+      {text:"Even a happy life cannot be without a measure of darkness.", author:"Carl Jung"},
+      {text:"Every human walks around with a certain kind of sadness.", author:"Maya Angelou"}
+    ],
+    focus: [
+      {text:"You don't have to see the whole staircase, just take the first step.", author:"Martin Luther King Jr."},
+      {text:"Focus on being productive instead of busy.", author:"Tim Ferriss"},
+      {text:"What you do every day matters more than what you do once in a while.", author:"Gretchen Rubin"}
+    ],
+    energetic: [
+      {text:"Don't watch the clock; do what it does. Keep going.", author:"Sam Levenson"},
+      {text:"Energy and persistence conquer all things.", author:"Benjamin Franklin"},
+      {text:"Act as if what you do makes a difference. It does.", author:"William James"}
+    ]
+  };
+
+  // ====== App core ======
+  const body = document.body;
+  const moodButtons = document.querySelectorAll('.mood-btn');
+  const quoteText = document.getElementById('quoteText');
+  const quoteAuthor = document.getElementById('quoteAuthor');
+  const player = document.getElementById('player');
+  const playPauseBtn = document.getElementById('playPauseBtn');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const shuffleBtn = document.getElementById('shuffleBtn');
+  const newQuoteBtn = document.getElementById('newQuoteBtn');
+  const trackTitle = document.getElementById('trackTitle');
+  const progressBar = document.querySelector('.progress > i');
+  const progressWrap = document.getElementById('progressBar');
+  const timeLabel = document.getElementById('timeLabel');
+  const volumeSlider = document.getElementById('volume');
+  const moodLabel = document.getElementById('moodLabel');
+  const particles = document.getElementById('particles');
+
+  let currentMood = localStorage.getItem('mood') || null;
+  let currentTrackList = [];
+  let currentTrackIndex = 0;
+  let progressInterval = null;
+  let fadeTimeout = null;
+
+  // helpers
+  function rand(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+  function setActiveMoodBtn(mood){
+    moodButtons.forEach(b=> b.classList.toggle('active', b.dataset.mood===mood));
+  }
+
+  // render particle layer per mood (subtle)
+  function renderParticles(mood){
+    particles.innerHTML = '';
+    const count = (mood==='energetic')? 30 : (mood==='happy')? 22 : (mood==='focus')? 18 : 12;
+    for(let i=0;i<count;i++){
+      const el = document.createElement('div');
+      el.style.position='absolute';
+      el.style.left = Math.random()*100 + '%';
+      el.style.top = Math.random()*100 + '%';
+      const size = (Math.random()*6)+4;
+      el.style.width = size+'px';
+      el.style.height = size+'px';
+      el.style.borderRadius='50%';
+      el.style.opacity = 0.08 + Math.random()*0.6;
+      if(mood==='happy'){ el.style.background='rgba(255,200,100,0.9)' }
+      else if(mood==='sad'){ el.style.background='rgba(91,143,255,0.9)' }
+      else if(mood==='focus'){ el.style.background='rgba(126,255,199,0.9)' }
+      else { el.style.background='rgba(255,107,203,0.95)' }
+      particles.appendChild(el);
+    }
+  }
+
+  function setMood(mood, autoPlay=true){
+    if(!mood || !tracks[mood]) return;
+    currentMood = mood;
+    localStorage.setItem('mood', mood);
+    setActiveMoodBtn(mood);
+    body.classList.remove('mood-happy','mood-sad','mood-focus','mood-energetic');
+    body.classList.add('mood-'+mood);
+    moodLabel.textContent = 'Mood: ' + mood[0].toUpperCase()+mood.slice(1);
+    // prepare tracks and a random one
+    currentTrackList = tracks[mood].slice();
+    currentTrackIndex = Math.floor(Math.random()*currentTrackList.length);
+    loadTrack(currentTrackIndex, autoPlay);
+    // show quote
+    showQuote(rand(quotes[mood]));
+    // render particles
+    renderParticles(mood);
+  }
+
+  function loadTrack(index, autoPlay=true){
+    const t = currentTrackList[index];
+    if(!t) return;
+    // fade out current if playing
+    if(!player.paused){
+      player.pause();
+      clearInterval(progressInterval);
+    }
+    // set src and metadata
+    player.src = t.src;
+    trackTitle.textContent = t.title || t.src;
+    progressBar.style.width = '0%';
+    timeLabel.textContent = '00:00 / 00:00';
+    // load then optionally play
+    player.load();
+    if(autoPlay){
+      // small delay so the UI updates
+      setTimeout(()=>player.play().catch(()=>{}),150);
+    }
+  }
+
+  // show quote with fade
+  function showQuote(q){
+    quoteText.classList.remove('show');
+    if(fadeTimeout) clearTimeout(fadeTimeout);
+    fadeTimeout = setTimeout(()=>{
+      quoteText.textContent = q.text;
+      quoteAuthor.textContent = q.author ? `— ${q.author}` : '';
+      quoteText.classList.add('show');
+    }, 180);
+  }
+
+  // controls
+  playPauseBtn.addEventListener('click', ()=>{
+    if(player.paused) player.play().catch(()=>{});
+    else player.pause();
+  });
+
+  prevBtn.addEventListener('click', ()=>{
+    if(!currentTrackList.length) return;
+    currentTrackIndex = (currentTrackIndex - 1 + currentTrackList.length) % currentTrackList.length;
+    loadTrack(currentTrackIndex, true);
+  });
+
+  nextBtn.addEventListener('click', ()=>{
+    if(!currentTrackList.length) return;
+    currentTrackIndex = (currentTrackIndex + 1) % currentTrackList.length;
+    loadTrack(currentTrackIndex, true);
+  });
+
+  shuffleBtn.addEventListener('click', ()=>{
+    if(!currentTrackList.length) return;
+    currentTrackIndex = Math.floor(Math.random()*currentTrackList.length);
+    loadTrack(currentTrackIndex, true);
+  });
+
+  newQuoteBtn.addEventListener('click', ()=>{
+    if(!currentMood) return;
+    showQuote(rand(quotes[currentMood]));
+  });
+
+  // volume
+  volumeSlider.addEventListener('input', ()=> player.volume = volumeSlider.value);
+  player.volume = volumeSlider.value;
+
+  // update UI as audio plays
+  player.addEventListener('play', ()=>{
+    playPauseBtn.textContent = 'Pause';
+    if(progressInterval) clearInterval(progressInterval);
+    progressInterval = setInterval(updateProgress, 250);
+  });
+
+  player.addEventListener('pause', ()=>{
+    playPauseBtn.textContent = 'Play';
+    clearInterval(progressInterval);
+  });
+
+  player.addEventListener('timeupdate', updateProgress);
+
+  player.addEventListener('ended', ()=>{
+    // auto-next on end
+    nextBtn.click();
+  });
+
+  function updateProgress(){
+    const d = player.duration || 0;
+    const c = player.currentTime || 0;
+    const pct = d ? Math.min(100, (c/d)*100) : 0;
+    progressBar.style.width = pct + '%';
+    timeLabel.textContent = formatTime(c) + ' / ' + (d?formatTime(d):'--:--');
+  }
+
+  function formatTime(s){
+    s = Math.floor(s||0);
+    const mm = String(Math.floor(s/60)).padStart(2,'0');
+    const ss = String(s%60).padStart(2,'0');
+    return `${mm}:${ss}`;
+  }
+
+  // mood buttons wiring
+  moodButtons.forEach(btn=>{
+    btn.addEventListener('click', ()=> setMood(btn.dataset.mood, true));
+  });
+
+  // quick keyboard shortcuts
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === ' '){ e.preventDefault(); playPauseBtn.click() }
+    else if(e.key === 'ArrowRight') nextBtn.click();
+    else if(e.key === 'ArrowLeft') prevBtn.click();
+  });
+
+  // init from last mood or default
+  if(currentMood && tracks[currentMood]){
+    setMood(currentMood,false);
+  } else {
+    // default mood
+    setMood('happy', false);
+  }
+
+  // Accessibility: progress seek by click
+  progressWrap.addEventListener('click', (ev)=>{
+    const rect = progressWrap.getBoundingClientRect();
+    const pct = (ev.clientX - rect.left) / rect.width;
+    if(player.duration) player.currentTime = pct * player.duration;
+    updateProgress();
+  });
+
+  // small safety: show friendly message if sample files missing
+  player.addEventListener('error', (e)=>{
+    // audio file missing or not loaded — user will replace with local files
+    // keep UI working; show brief note in trackTitle
+    if(!trackTitle.dataset.warnShown){
+      trackTitle.dataset.warnShown = '1';
+      const prev = trackTitle.textContent;
+      trackTitle.textContent = prev + ' (replace sample mp3s with your own local files)';
+      setTimeout(()=>{ trackTitle.textContent = prev }, 3000);
+    }
+  });
+
+  // end of script
+</script>
+</body>
+</html>
