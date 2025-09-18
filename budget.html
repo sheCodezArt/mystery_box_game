@@ -1,0 +1,397 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Budget Quest — Interactive Budgeting Game</title>
+  <style>
+    :root{
+      --bg:#e6fbff; /* very light aqua */
+      --deep:#0466c8; /* deep blue */
+      --mid:#3da5d9; /* aqua-blue */
+      --accent:#7be0f2; /* light aqua */
+      --card:#ffffff;
+      --glass: rgba(255,255,255,0.6);
+      --glass-2: rgba(255,255,255,0.3);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg),#dff6ff);color:#073b4c}
+    .app{
+      max-width:1100px;margin:30px auto;padding:18px;display:grid;grid-template-columns:360px 1fr;gap:18px;
+    }
+    header{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between}
+    .logo{display:flex;gap:12px;align-items:center}
+    .logo .mark{width:48px;height:48px;border-radius:10px;background:linear-gradient(135deg,var(--deep),var(--mid));display:flex;align-items:center;justify-content:center;color:white;font-weight:700;box-shadow:0 6px 18px rgba(4,102,200,.18)}
+    h1{font-size:18px;margin:0}
+    p.lead{margin:0;color:rgba(7,59,76,.7)}/* Left panel */
+.panel{background:var(--card);border-radius:14px;padding:16px;box-shadow:0 8px 30px rgba(4,102,200,.06);min-height:420px}
+.panel h2{margin:0 0 8px 0}
+label{display:block;font-size:13px;margin-top:10px;color:var(--deep)}
+input[type=range]{width:100%}
+.input-row{display:flex;gap:8px}
+input[type=number],select,input[type=text]{width:100%;padding:10px;border-radius:8px;border:1px solid #d6eef9;background:var(--glass);outline:none}
+.small{font-size:12px;color:rgba(7,59,76,.6)}
+.btn{display:inline-block;padding:10px 14px;border-radius:10px;background:linear-gradient(90deg,var(--mid),var(--deep));color:white;border:none;cursor:pointer;font-weight:600}
+
+/* Right board */
+.board{display:grid;grid-template-rows:auto 1fr;gap:12px}
+.card{background:linear-gradient(180deg,rgba(255,255,255,0.9),var(--card));border-radius:12px;padding:14px;box-shadow:0 8px 20px rgba(8,100,170,.05)}
+
+/* Goal chips and events */
+.goals{display:flex;gap:8px;flex-wrap:wrap}
+.chip{padding:8px 10px;border-radius:999px;background:var(--glass-2);cursor:pointer;border:1px solid rgba(61,165,217,.12)}
+.chip.active{background:linear-gradient(90deg,var(--accent),var(--mid));color:#003048;border:none;transform:translateY(-2px)}
+
+/* Allocation area */
+.alloc-grid{display:grid;grid-template-columns:1fr 120px;gap:10px;align-items:center}
+.alloc-row{display:flex;gap:8px;align-items:center}
+.alloc-value{min-width:62px;text-align:right}
+
+/* Pie canvas */
+.viz{display:flex;align-items:center;gap:18px}
+canvas{width:220px;height:220px;border-radius:12px;background:linear-gradient(180deg,#ffffff,#e9fbff);box-shadow:inset 0 -20px 40px rgba(0,0,0,.02)}
+
+/* Results */
+.result-list{display:flex;flex-direction:column;gap:8px}
+.result-item{display:flex;justify-content:space-between;padding:10px;border-radius:10px;background:linear-gradient(90deg,rgba(61,165,217,.06),rgba(4,102,200,.02))}
+
+/* Footer / Controls */
+.controls{display:flex;gap:8px;flex-wrap:wrap}
+
+/* Mobile */
+@media (max-width:880px){
+  .app{grid-template-columns:1fr;padding:12px}
+  .logo h1{font-size:16px}
+}
+
+/* little animations */
+.floaty{position:fixed;right:12px;bottom:12px;background:linear-gradient(90deg,var(--mid),var(--accent));color:white;padding:8px 12px;border-radius:14px;box-shadow:0 10px 30px rgba(3,57,101,.12);transform:translateY(0);animation:float 3s ease-in-out infinite}
+@keyframes float{0%{transform:translateY(0)}50%{transform:translateY(-6px)}100%{transform:translateY(0)}}
+
+/* subtle bubble background */
+.bubbles{position:fixed;left:0;top:0;right:0;bottom:0;pointer-events:none;z-index:-1}
+.bubble{position:absolute;border-radius:50%;opacity:.07;background:radial-gradient(circle at 30% 30%, #7be0f2, #3da5d9);filter:blur(10px);}
+
+  </style>
+</head>
+<body>
+  <div class="bubbles" aria-hidden="true">
+    <div class="bubble" style="width:260px;height:260px;left:-30px;top:60px;"></div>
+    <div class="bubble" style="width:180px;height:180px;right:10px;top:120px;"></div>
+    <div class="bubble" style="width:120px;height:120px;left:50%;top:30%;transform:translateX(-50%);"></div>
+  </div>  <div class="app">
+    <header>
+      <div class="logo">
+        <div class="mark">BQ</div>
+        <div>
+          <h1>Budget Quest</h1>
+          <p class="lead small">A playful, interactive budget-suggestion game — blue & aqua theme</p>
+        </div>
+      </div>
+      <div class="small">Tip: Try the "Surprise Week" event for higher challenge</div>
+    </header><aside class="panel" aria-labelledby="input-title">
+  <h2 id="input-title">Player Setup</h2>
+  <p class="small">Enter your monthly income and preferences. The game will suggest a budget plan and score your allocations.</p>
+
+  <label for="income">Monthly Net Income (₦ / $)</label>
+  <div class="input-row">
+    <input id="income" type="number" min="0" value="3000" />
+    <select id="period" aria-label="currency">
+      <option value="USD">USD</option>
+      <option value="NGN">NGN</option>
+      <option value="EUR">EUR</option>
+    </select>
+  </div>
+
+  <label>Choose financial goal</label>
+  <div class="goals" id="goals">
+    <div class="chip active" data-goal="safety">Emergency Fund</div>
+    <div class="chip" data-goal="debt">Pay Debt</div>
+    <div class="chip" data-goal="invest">Invest Growth</div>
+    <div class="chip" data-goal="save">Save For Big Purchase</div>
+  </div>
+
+  <label class="small" style="margin-top:12px">Risk/Style</label>
+  <div style="display:flex;gap:8px;align-items:center">
+    <label class="small">Cautious</label>
+    <input id="risk" type="range" min="1" max="5" value="3" />
+    <label class="small">Bold</label>
+  </div>
+
+  <label style="margin-top:10px">Surprise Events</label>
+  <div style="display:flex;gap:8px;margin-top:6px">
+    <button class="btn" id="play">Suggest Budget</button>
+    <button class="btn" id="challenge" style="background:linear-gradient(90deg,#ffb347,#ff7b7b);">Surprise Week</button>
+  </div>
+
+  <hr style="margin:14px 0;border:none;border-top:1px solid rgba(3,57,101,.06)" />
+  <h3 style="margin:0 0 8px 0">Manual Allocation (game mode)</h3>
+  <p class="small">Drag sliders to allocate percentage of income. Must total 100% to 'Lock In'.</p>
+
+  <div id="allocations">
+    <!-- allocations created by JS -->
+  </div>
+
+  <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
+    <button class="btn" id="lock">Lock In</button>
+    <div style="flex:1;text-align:right" class="small">Total: <span id="totalPct">0</span>%</div>
+  </div>
+
+</aside>
+
+<main class="board">
+  <section class="card">
+    <h2>Scenario & Feedback</h2>
+    <p class="small" id="scenarioText">Welcome to Budget Quest — fill inputs and click "Suggest Budget" to get a tailored plan. You can then fine-tune allocations and lock them in to get a score.</p>
+  </section>
+
+  <section class="card" aria-live="polite">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+      <div style="flex:1;min-width:220px">
+        <h3 style="margin:0">Suggested Plan</h3>
+        <div class="viz" style="margin-top:8px">
+          <canvas id="pie" width="440" height="440" aria-hidden="true"></canvas>
+          <div style="flex:1">
+            <div class="result-list" id="results"></div>
+          </div>
+        </div>
+      </div>
+      <div style="width:220px">
+        <h4 style="margin:0">Score & Tips</h4>
+        <div style="margin-top:10px">
+          <div style="height:16px;background:rgba(61,165,217,.12);border-radius:10px;overflow:hidden"><div id="scoreBar" style="width:0%;height:100%;border-radius:10px;background:linear-gradient(90deg,var(--mid),var(--deep));transition:width 900ms ease"></div></div>
+          <div style="margin-top:8px;font-weight:700;font-size:20px" id="scoreText">—</div>
+          <div class="small" id="tipText" style="margin-top:8px">Your tips will appear here.</div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+</main>
+
+  </div>  <div class="floaty" id="hint">Playful budget help</div>  <script>
+    // -- Data model
+    const categories = [
+      {id:'needs',name:'Needs (Essentials)',color:'#0466c8'},
+      {id:'wants',name:'Wants (Lifestyle)',color:'#3da5d9'},
+      {id:'savings',name:'Savings',color:'#7be0f2'},
+      {id:'debt',name:'Debt Repayment',color:'#02457a'},
+      {id:'invest',name:'Investments',color:'#00a3c4'}
+    ];
+
+    // -- helpers
+    const $ = id => document.getElementById(id);
+    function fmt(n){return Math.round(n*100)/100}
+
+    // build allocation sliders
+    const allocContainer = document.getElementById('allocations');
+    categories.forEach(cat=>{
+      const row = document.createElement('div');
+      row.className='alloc-row';
+      row.style.marginTop='8px';
+      row.innerHTML = `
+        <div style="flex:1">
+          <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-weight:600">${cat.name}</div><div class="small">% <span id="val-${cat.id}">0</span></div></div>
+          <input type="range" min="0" max="100" value="0" id="range-${cat.id}" />
+        </div>
+      `;
+      allocContainer.appendChild(row);
+    });
+
+    // state
+    let state = {income:3000,period:'USD',goal:'safety',risk:3,alloc:{}};
+    categories.forEach(c=>state.alloc[c.id]=0);
+
+    // DOM refs
+    const incomeInput = $('income');
+    const period = $('period');
+    const goals = document.getElementById('goals');
+    const risk = $('risk');
+    const play = $('play');
+    const challenge = $('challenge');
+    const lock = $('lock');
+    const totalPct = $('totalPct');
+    const results = $('results');
+    const pie = document.getElementById('pie');
+    const scoreBar = $('scoreBar');
+    const scoreText = $('scoreText');
+    const tipText = $('tipText');
+    const scenarioText = $('scenarioText');
+    const hint = document.getElementById('hint');
+
+    // attach slider events
+    categories.forEach(c=>{
+      const r = document.getElementById('range-'+c.id);
+      const v = document.getElementById('val-'+c.id);
+      r.addEventListener('input',e=>{
+        state.alloc[c.id]=Number(e.target.value);
+        v.textContent = state.alloc[c.id];
+        updateTotal();
+      });
+    });
+
+    function updateTotal(){
+      const total = Object.values(state.alloc).reduce((a,b)=>a+b,0);
+      totalPct.textContent = fmt(total);
+      if(total>100) totalPct.style.color='crimson'; else totalPct.style.color='inherit';
+    }
+
+    // goal chips toggle
+    goals.addEventListener('click',e=>{
+      const chip = e.target.closest('.chip'); if(!chip) return;
+      [...goals.children].forEach(c=>c.classList.remove('active'));
+      chip.classList.add('active');
+      state.goal = chip.dataset.goal;
+      scenarioText.textContent = `Goal set: ${chip.textContent}. Click Suggest Budget to get a plan tuned for that goal.`;
+    });
+
+    incomeInput.addEventListener('input',e=>{ state.income = Number(e.target.value) || 0; });
+    period.addEventListener('change',e=>{ state.period = e.target.value; });
+    risk.addEventListener('input',e=>{ state.risk = Number(e.target.value); });
+
+    // Suggest Budget algorithm (game logic)
+    function suggestBudget({income,goal,risk}){
+      // base model: 50/30/20 but tweaked
+      let base = {needs:50,wants:30,savings:20,debt:0,invest:0};
+      if(goal==='debt'){ base.debt = 20; base.savings -= 10; base.wants -= 10; }
+      if(goal==='invest'){ base.invest = 15; base.savings -= 5; base.wants -= 5; }
+      if(goal==='save'){ base.savings += 15; base.wants -= 10; }
+      if(risk>=4){ base.invest += 10; base.savings -= 5; }
+      if(risk<=2){ base.savings += 5; base.invest -= 5; }
+
+      // normalize so none negative and sum 100
+      for(let k in base) if(base[k]<0) base[k]=0;
+      const sum = Object.values(base).reduce((a,b)=>a+b,0);
+      for(let k in base) base[k] = fmt(base[k]/sum*100);
+
+      // create friendly values in currency
+      const plan = {};
+      for(let k in base){ plan[k]={pct:base[k],amt:fmt(income*(base[k]/100))}; }
+      return plan;
+    }
+
+    function renderPlan(plan){
+      // draw pie
+      const ctx = pie.getContext('2d');
+      const w = pie.width; const h = pie.height; const cx=w/2; const cy=h/2; const r=Math.min(w,h)/2 -12;
+      ctx.clearRect(0,0,w,h);
+      let start= -0.5*Math.PI;
+      Object.keys(plan).forEach((k,i)=>{
+        const pct = plan[k].pct/100;
+        if(pct<=0) return;
+        const end = start + pct*2*Math.PI;
+        ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,start,end); ctx.closePath();
+        const color = categories.find(c=>c.id===k)?.color || '#7be0f2';
+        ctx.fillStyle = color; ctx.fill();
+        start = end;
+      });
+      // render labels
+      results.innerHTML='';
+      Object.keys(plan).forEach(k=>{
+        const row = document.createElement('div');row.className='result-item';
+        row.innerHTML = `<div>${categories.find(c=>c.id===k)?.name||k}</div><div><strong>${plan[k].pct}%</strong> — ${formatCurrency(plan[k].amt)}</div>`;
+        results.appendChild(row);
+      });
+    }
+
+    function formatCurrency(n){
+      const cur = state.period || 'USD';
+      return (cur==='NGN'? '₦':'$') + Number(n).toLocaleString();
+    }
+
+    // scoring: compare user's current allocations to suggested plan
+    function scoreUser(plan){
+      // if total not 100 -> penalty
+      const total = Object.values(state.alloc).reduce((a,b)=>a+b,0);
+      let score=100;
+      if(total!==100) score -= Math.abs(100-total)*0.6; // penalty
+      // difference per category
+      Object.keys(plan).forEach(k=>{
+        const diff = Math.abs((state.alloc[k]||0) - plan[k].pct);
+        score -= Math.min(20,diff*0.4);
+      });
+      score = Math.max(0,Math.round(score));
+      return score;
+    }
+
+    // UI interactions
+    play.addEventListener('click',()=>{
+      const plan = suggestBudget({income:state.income,goal:state.goal,risk:state.risk});
+      renderPlan(plan);
+      // set hint
+      scenarioText.textContent = `Suggested plan for ${state.goal}. Try to match or adjust allocations, then Lock In to get your score.`;
+      // fill sliders with suggested split as starting point
+      Object.keys(plan).forEach(k=>{
+        const val = Math.round(plan[k].pct);
+        state.alloc[k]=val;
+        const r = document.getElementById('range-'+k);
+        const v = document.getElementById('val-'+k);
+        if(r && v){ r.value=val; v.textContent=val; }
+      });
+      updateTotal();
+      // animate hint
+      hint.textContent = 'Plan suggested — fine-tune and lock in!';
+      setTimeout(()=>hint.textContent='Playful budget help',2400);
+    });
+
+    challenge.addEventListener('click',()=>{
+      // surprise event: unexpected expense or windfall
+      const events = [
+        {txt:'Car repair: unexpected ₦/$. Budget must add emergency 10% to needs',adj:{needs:10,wants:-5,savings:-5}},
+        {txt:'Freelance bonus! Add 10% to investments or savings',adj:{invest:10,savings:5,wants:-15}},
+        {txt:'Medical expense: shift 8% to needs',adj:{needs:8,savings:-4,wants:-4}},
+        {txt:'Tax refund: You're richer! Try increasing investments by 10%',adj:{invest:10,wants:-4,savings:-6}}
+      ];
+      const ev = events[Math.floor(Math.random()*events.length)];
+      scenarioText.textContent = 'Surprise: '+ev.txt;
+      // change state slightly
+      const plan = suggestBudget({income:state.income,goal:state.goal,risk:state.risk});
+      Object.keys(ev.adj).forEach(k=>{ if(plan[k]) plan[k].pct = Math.max(0,plan[k].pct + ev.adj[k]); });
+      // normalize
+      const sum = Object.values(plan).reduce((a,b)=>a+a? a + b.pct : 0,0); // (we'll instead rebuild properly below)
+      // rebuild simple normalization
+      let raw = {};
+      let s=0; Object.keys(plan).forEach(k=>{ raw[k]=plan[k].pct; s+=raw[k]; });
+      Object.keys(raw).forEach(k=>raw[k]=fmt(raw[k]/s*100));
+      const newPlan={}; Object.keys(raw).forEach(k=>newPlan[k]={pct:raw[k],amt:fmt(state.income*(raw[k]/100))});
+      renderPlan(newPlan);
+      // set sliders
+      Object.keys(newPlan).forEach(k=>{ const r=document.getElementById('range-'+k); const v=document.getElementById('val-'+k); if(r&&v){ r.value=Math.round(newPlan[k].pct); v.textContent=Math.round(newPlan[k].pct); state.alloc[k]=Math.round(newPlan[k].pct); }});
+      updateTotal();
+    });
+
+    lock.addEventListener('click',()=>{
+      // pick the plan currently shown by reading results
+      const plan = {};
+      // reconstruct plan from displayed results
+      const rows = results.children; if(rows.length===0){ alert('No suggested plan to lock. Click Suggest Budget first.'); return; }
+      for(let r of rows){ const text = r.textContent; // e.g. "Needs... 50% — $1500"
+        const keyName = r.firstElementChild.textContent.trim();
+        const cat = categories.find(c=>keyName.startsWith(c.name.split(' ')[0]));
+        const pct = Number(r.querySelector('strong').textContent.replace('%',''));
+        const id = cat ? cat.id : null; if(id) plan[id]={pct};
+      }
+      // score
+      const s = scoreUser(plan);
+      scoreBar.style.width = s+'%'; scoreText.textContent = s + "/100";
+      // tips
+      let tip = '';
+      if(s>85) tip='Excellent match — your allocations are well-balanced!';
+      else if(s>65) tip='Good job — a couple tweaks and you'll be golden.';
+      else if(s>40) tip='You can improve: consider trimming wants and boosting savings or debt payments.';
+      else tip='High variance: revisit priorities and consider cutting non-essential spending.';
+      tipText.textContent = tip;
+
+      // animate floating reaction
+      hint.textContent = s>70? 'Nice score! 🎉':'Keep trying — you got this!';
+      setTimeout(()=>hint.textContent='Playful budget help',2200);
+    });
+
+    // initial suggest to populate UI
+    play.click();
+
+  </script></body>
+</html>
